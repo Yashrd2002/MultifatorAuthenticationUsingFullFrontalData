@@ -17,7 +17,7 @@ const UserContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState({});
-
+  const [person,SetPerson]=useState();
   const createUser = (email, password) => {
     return createUserWithEmailAndPassword(auth, email, password).then(
       async () => {
@@ -69,6 +69,8 @@ export const AuthContextProvider = ({ children }) => {
         signIn,
         googleSignIn,
         setUpRecaptcha,
+        SetPerson,
+        person
       }}
     >
       {children}

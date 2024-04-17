@@ -10,7 +10,7 @@ import { db } from "../firbase";
 
 
 
-function Login() {
+function Sign() {
   const [tempAccount, setTempAccount] = useState("");
   const [localUserStream, setLocalUserStream] = useState(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -27,7 +27,8 @@ function Login() {
   const storage = getStorage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { createUser,user } = UserAuth();
+  const { createUser,user,person } = UserAuth();
+  console.log(person);
   // console.log(user);
   const [data,setData]=useState([]);
   // if (!location?.state) {
@@ -55,15 +56,15 @@ function Login() {
 //   fetchUserData();
 //   console.log(data.user);
 // },[])
-  const handleSignUp = async (e) => {
-    // e.preventDefault();
-    try {
-      await createUser(location?.state?.account.email, location?.state?.account.password);
-      navigate("/login");
-    } catch (e) {
-      console.log(e.message);
-    }
-  };
+  // const handleSignUp = async (e) => {
+  //   // e.preventDefault();
+  //   try {
+  //     await createUser(location?.state?.account.email, location?.state?.account.password);
+  //     navigate("/login");
+  //   } catch (e) {
+  //     console.log(e.message);
+  //   }
+  // };
   const loadModels = async () => {
     // const uri = import.meta.env.DEV ? "/models" : "/react-face-auth/models";
     const uri = "/models";
@@ -75,7 +76,7 @@ function Login() {
 
   useEffect(() => {
     setTempAccount(location?.state?.account);
-    console.log(location?.state?.account);
+    console.log(location?.state);
     
     getDownloadURL(ref(storage, `images/${location?.state?.account.email}`)).then((url) => {
       setTempAccount((prevAccount) => ({
@@ -167,7 +168,6 @@ function Login() {
       faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetections);
 
       if (results.length > 0 && tempAccount.id === results[0].label) {
-        await handleSignUp();
         setLoginResult("SUCCESS");
 
       } else {
@@ -351,4 +351,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Sign;

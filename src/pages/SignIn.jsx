@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { db, storage } from "../firbase";
 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { UserAuth } from "../context/AuthContext";
 const accounts = [
   {
@@ -41,89 +41,55 @@ function SignIn() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { createUser, user } = UserAuth();
+  const {signIn, user,SetPerson } = UserAuth();
   const navigate = useNavigate();
-  const convertBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
+  const [data,setData]=useState();
+  const [show,setShow]=useState(false);
 
-      fileReader.onload = () => {
-        resolve(fileReader.result);
-      };
-
-      fileReader.onerror = (error) => {
-        reject(error);
-      };
-    });
-  };
-  console.log(user);
-  const uploadImageToFirebase = async (file) => {
-    if (!file) return;
-
-    const imageRef = ref(storage, `images/${email}`);
-
-    uploadBytes(imageRef, file).then((snapshot) => {
-      getDownloadURL(snapshot.ref).then((url) => {
-        console.log(url);
-      });
-    });
-  };
-  const handleSignUp = async (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
+    
     try {
-      await createUser(email, password);
-      navigate("/login");
+      fetchUserData();
+      await signIn(email,password);
+      // console.log(selected);
+      setShow(true)
+      // navigate("/sign");
+      
     } catch (e) {
       console.log(e.message);
+      setErrorMessage(e.message)
     }
   };
-
-  const handleImage = async (e) => {
-    const files = e.target.files;
-    if (files == null || files.length == 0) {
-      setErrorMessage("No files selected for import.");
-      return;
-    }
-    let file = files[0];
-    console.log(file);
-    // let name = file.name;
-    // let suffixArr = name.split("."),
-    //   suffix = suffixArr[suffixArr.length - 1];
-    // if (suffix != "png" && suffix != "jpg" && suffix != "jpeg") {
-    //   setErrorMessage("Only support png, jpg, or jpeg files.");
-    //   return;
-    // }
-    await uploadImageToFirebase(file);
-  
-    // Check if the file is a Blob before converting it to base64
-    if (!(file instanceof Blob)) {
-      setErrorMessage("Invalid file format.");
-      return;
-    }
-  
-    const base64 = await convertBase64(file);
-  
-    const user = {
-      id: "custom",
-      fullName: file.name,
-      password: password,
-      email: email,
-      type: "CUSTOM",
-      picture: base64,
-    };
-  
+  const fetchUserData = async () => {
     try {
-      setDoc(doc(db, `user`, password), {
-        user,
-      });
+      const q = query(
+        collection(db, "user"),
+        where("user.email", "==", email)
+      );
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.size === 0) {
+        throw new Error("User not found");
+      }
+      const userData = querySnapshot.docs[0].data();
+      // console.log(userData.user.picture);
+      const user = {
+        id: "custom",
+        fullName: userData.user.fullName,
+        email: userData.user.email,
+        password: userData.user.password,
+        type: "CUSTOM",
+        picture: userData.user.picture,
+      };
+      SetPerson(user);
+      setCustomUser(user);
+      setSelected(user);
     } catch (error) {
-      console.log(error);
+      console.log(error.message);
+      setErrorMessage(error.message);
     }
-  
-    setCustomUser(user);
-    setSelected(user);
-  };
+
+};
   
 
   return (
@@ -138,7 +104,7 @@ function SignIn() {
                 <User key={account.id} user={account} />
               ))} */}
               <div className="block text-gray-700 text-3xl text-center font-bold mb-7">
-                Sign Up
+                Sign In
               </div>
               <div className="flex flex-col gap-4">
                 <input
@@ -147,6 +113,7 @@ function SignIn() {
                   placeholder="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={show}
                 />
                 <input
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -154,81 +121,23 @@ function SignIn() {
                   placeholder="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={show}
                 />
               </div>
-              {customUser && (
-                <div className="relative">
-                  <User key={customUser.id} user={customUser} type="CUSTOM" />
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="text-indigo-800 w-6 h-6 absolute top-1/2 -translate-y-1/2 right-[-32px] cursor-pointer"
-                    onClick={() => {
-                      setCustomUser(null);
-                      selected?.type === "CUSTOM" && setSelected(accounts[0]);
-                    }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </div>
-              )}
             </div>
           </RadioGroup>
-          {!customUser && (
-            <div className="flex flex-col items-center justify-center w-full mt-3">
-              <label
-                htmlFor="dropzone-file"
-                className="flex flex-col items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:border-indigo-200 hover:bg-gray-100"
-              >
-                <div className="flex flex-col items-center justify-center py-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-6 h-6 text-indigo-500 mb-2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                    />
-                  </svg>
-                  <p className="font-semibold mb-2 text-sm text-gray-500 dark:text-gray-400">
-                    Click to upload referral image
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    PNG, JPG or JPEG
-                  </p>
-                </div>
-                <input
-                  id="dropzone-file"
-                  type="file"
-                  accept=".png, .jpg, .jpeg"
-                  className="hidden"
-                  onChange={handleImage}
-                />
-              </label>
-              {errorMessage && (
-                <p className="text-red-500 text-xs mt-2">{errorMessage}</p>
-              )}
-            </div>
+          {errorMessage && (
+            <div className="text-red-400 my-2">{errorMessage}</div>
           )}
-          <Link
-            // onClick={handleSignUp}
-            to={"/login"}
+
+          {show ? <Link
+            // onClick={handleSignIn}
+            to={"/sign"}
             state={{ account: selected }}
+          
             className="mt-4 inline-flex items-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-600"
           >
-            Sign In
+            Prceed to face authentication
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -243,10 +152,17 @@ function SignIn() {
                 d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
               />
             </svg>
-          </Link>
+          </Link> :<Link
+            onClick={handleSignIn}
+            className="mt-4 inline-flex mx-4 items-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-600"
+          >
+            Sign In
+          
+          </Link>}
+          
           <div className="text-sm text-gray-500 mt-4">
             Dont't have an Account?{" "}
-            <Link to={"/signin"} className="text-blue-700">
+            <Link to={"/user-select"} className="text-blue-700">
               Sign Up
             </Link>
           </div>

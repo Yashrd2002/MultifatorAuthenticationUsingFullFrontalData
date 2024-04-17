@@ -19,6 +19,7 @@ import Orders from "./pages/Orders";
 import Calendar from "./pages/Calendar";
 import Kanban from "./pages/Kanban";
 import Editor from "./pages/Editor";
+import Sign from "./pages/Sign";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -27,6 +28,7 @@ const router = createBrowserRouter(
         <Route path="/" element={<Home />} />
         <Route path="user-select" element={<UserSelect />} />
         <Route path="login" element={<Login />} />
+        <Route path="sign" element={<Sign />} />
         <Route path="signin" element={<SignIn />} />
         <Route
             path="/protected"

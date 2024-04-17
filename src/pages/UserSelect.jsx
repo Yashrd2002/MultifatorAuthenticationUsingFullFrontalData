@@ -57,7 +57,7 @@ function UserSelect() {
       };
     });
   };
-  console.log(user);
+  // console.log(user);
   const uploadImageToFirebase = async (file) => {
     if (!file) return;
 
@@ -65,19 +65,19 @@ function UserSelect() {
 
     uploadBytes(imageRef, file).then((snapshot) => {
       getDownloadURL(snapshot.ref).then((url) => {
-        console.log(url);
+        // console.log(url);
       });
     });
   };
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    try {
-      await createUser(email, password);
-      navigate("/login");
-    } catch (e) {
-      console.log(e.message);
-    }
-  };
+  // const handleSignUp = async (e) => {
+  //   // e.preventDefault();
+  //   try {
+  //     await createUser(email, password);
+  //     navigate("/login");
+  //   } catch (e) {
+  //     console.log(e.message);
+  //   }
+  // };
 
   return (
     <div className="h-full flex flex-col items-center justify-center gap-[24px] w-full max-w-[720px] mx-auto">
